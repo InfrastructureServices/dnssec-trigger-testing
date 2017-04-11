@@ -3,37 +3,35 @@
 # Currently best-effort functions meaning no clean up after error.
 
 import subprocess
+import re
 
-from result import Result, ResultType
+from error import ConfigError
 
 
-def _build_ret_value(ret):
+def _run_ip_command(arguments):
     """
-    Map subprocess.run() return value into my own Result type
-    :param ret: Return value from call to subprocess.run() 
-    :return: Value of type Result built from "ret"
-    """
-    if ret.returncode == 0:
-        return Result(ResultType.Ok, None)
-    else:
-        return Result(ResultType.Err, ret.stderr)
-
-
-def _run_ip_command(command):
-    """
-    :param command: List of strings 
+    :param arguments: List of strings
     :return: 
     """
-    return subprocess.run(["ip"] + command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = subprocess.run(["ip"] + arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if ret.returncode != 0:
+        raise ConfigError("ip", arguments, ret.stderr.decode("UTF-8"))
+    else:
+        return ret
 
 
-def _run_ip_ns_command(ns, command):
+def _run_ip_ns_command(ns, arguments):
     """
     :param ns: Namespace 
-    :param command: List of strings
+    :param arguments: List of strings
     :return: 
     """
-    return _run_ip_command(["netns", "exec", ns, "ip"] + command)
+    args_within_ns = ["netns", "exec", ns, "ip"] + arguments
+    ret = _run_ip_command(args_within_ns)
+    if ret.returncode != 0:
+        raise ConfigError("ip", args_within_ns, ret.stderr.decode("UTF-8"))
+    else:
+        return ret
 
 
 def _root_link_name(name):
@@ -50,8 +48,7 @@ def new_namespace(name):
     :param name: Name of the new namespace
     :return: Value of type Result containing either None or a string with error message
     """
-    ret = subprocess.run(["ip", "netns", "add", name], stderr=subprocess.PIPE)
-    return _build_ret_value(ret)
+    _run_ip_command(["netns", "add", name])
 
 
 def connect_to_root_ns(name):
@@ -62,13 +59,8 @@ def connect_to_root_ns(name):
     """
     root_link_name = _root_link_name(name)
     ns_link_name = _ns_link_name(name)
-    ret = subprocess.run(["ip", "link", "add", root_link_name, "type", "veth", "peer", "name", ns_link_name],
-                         stderr=subprocess.PIPE)
-    if ret.returncode == 0:
-        ret = subprocess.run(["ip", "link", "set", ns_link_name, "netns", name],
-                             stderr=subprocess.PIPE)
-
-    return _build_ret_value(ret)
+    _run_ip_command(["link", "add", root_link_name, "type", "veth", "peer", "name", ns_link_name])
+    _run_ip_command(["link", "set", ns_link_name, "netns", name])
 
 
 def assign_addresses(name, id):
@@ -82,21 +74,18 @@ def assign_addresses(name, id):
     ns_ip = "100." + str(id) + ".1.2/24"
     root_link_name = _root_link_name(name)
     ns_link_name = _ns_link_name(name)
+
+    # Commands to run under root namespace
     root_cmds = [["addr", "add", root_ip, "dev", root_link_name],
                  ["link", "set", root_link_name, "up"]]
+    for cmd in root_cmds:
+        _run_ip_command(cmd)
+
+    # Commands to run under specified namespace
     ns_cmds = [["addr", "add", ns_ip, "dev", ns_link_name],
                ["link", "set", ns_link_name, "up"]]
-    for i in root_cmds:
-        ret = _run_ip_command(i)
-        if ret.returncode != 0:
-            return _build_ret_value(ret)
-
-    for i in ns_cmds:
-        ret = _run_ip_ns_command(name, i)
-        if ret.returncode != 0:
-            return _build_ret_value(ret)
-
-    return Result(ResultType.Ok, None)
+    for cmd in ns_cmds:
+        _run_ip_ns_command(name, cmd)
 
 
 def get_ns_list():
@@ -104,16 +93,10 @@ def get_ns_list():
     Get a list of namespaces available on this system.
     :return: Result type containing either a list of namespaces or a string with error message
     """
-    ret = subprocess.run(["ip", "netns"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    result = None
-    if ret.returncode == 0:
-        ns_list_text = ret.stdout.decode("UTF-8")
-        ns_list = ns_list_text.splitlines()
-        result = Result(ResultType.Ok, ns_list)
-    else:
-        result = Result(ResultType.Err, ret.stderr)
-
-    return result
+    ret = _run_ip_command(["netns"])
+    ns_list_text = ret.stdout.decode("UTF-8")
+    ns_list = ns_list_text.splitlines()
+    return ns_list
 
 
 def get_ns_dev_addr(name):
@@ -122,4 +105,15 @@ def get_ns_dev_addr(name):
     :param name: 
     :return: 
     """
-    pass
+    link = _ns_link_name(name)
+    ret = _run_ip_ns_command(name, ["-4", "a", "show", "dev", link, "scope", "global"])
+    out = ret.stdout.decode("UTF-8")
+    ip = re.findall(r'[0-9]+(?:\.[0-9]+){3}', out)
+    if len(ip) == 1:
+        return ip[0]
+    elif len(ip) > 1:
+        # fixme: not sure what to do in this case
+        return ip[0]
+    else:
+        return None
+
