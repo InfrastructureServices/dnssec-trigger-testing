@@ -1,12 +1,15 @@
-import netns as ns
+from server import DNSServer,DNSServerType
+from netns import NetworkInterface
+from dir import Dir
+from error import ConfigError
 
-ns.new_namespace("ns1")
-ns.new_namespace("ns2")
+if __name__ == '__main__':
+    try:
+        Dir.init()
+        ni = NetworkInterface("root", 1)
+        test = DNSServer(DNSServerType.AUTHORITATIVE, ni)
+        test.serve_zone(".")
+        test.run()
+    except ConfigError as err:
+        print("error: {0}".format(err))
 
-ns.connect_to_root_ns("ns1")
-ns.connect_to_root_ns("ns2")
-
-ns.assign_addresses("ns1", 1)
-ns.assign_addresses("ns2", 2)
-
-ns.get_ns_list()
