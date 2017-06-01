@@ -7,7 +7,7 @@
                         NS      {{primary_server}}
                         NS      {{secondary_server}}
 
-{{primary_server}}	A	127.0.0.1
-{{secondary_server}}	A	127.0.0.1
-{{zone}}		A	100.0.0.1
+{{primary_server}}	A	{{ip_address}}
+{{secondary_server}}	A	{{ip_address}}
+{{zone}}		A	{{ip_address}}
 

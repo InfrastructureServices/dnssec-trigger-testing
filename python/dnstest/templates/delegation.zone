@@ -1,0 +1,6 @@
+
+; Delegated external zone with its own nameservers (and glue records)
+{{zone}}      IN        NS              {{primary_server}}
+{{zone}}      IN        NS              {{secondary_server}}
+{{primary_server}}      IN      A       {{ip_address}}
+{{secondary_server}}    IN      A       {{ip_address}}

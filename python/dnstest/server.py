@@ -6,6 +6,17 @@ from enum import Enum
 from dir import Dir
 
 import os
+import shutil
+
+RESOLVER_HINT = """
+
+zone "." IN {
+    type hint;
+    file "named.ca";
+};
+
+
+"""
 
 
 class DNSServerType(Enum):
@@ -22,29 +33,51 @@ class DNSServer:
         conf_file_content = j2_env.get_template("named.conf").render(
             ip_address = interface.get_address(),
             working_dir=self.conf_path,
-            recursion="no"
+            recursion="no" if srv_type == DNSServerType.AUTHORITATIVE else "yes"
         )
         with open(self.conf_path+"/named.conf", "w") as f:
             f.write(conf_file_content)
+        if srv_type == DNSServerType.RESOLVER:
+            shutil.copyfile(os.getcwd()+"/templates/named.ca", self.conf_path+"/named.ca")
+            with open(self.conf_path+"/named.conf", "a") as f:
+                f.write(RESOLVER_HINT)
+
+    @staticmethod
+    def __ns_names(zone_name):
+        name_for_servers = zone_name if zone_name != "." else "" # Just to avoid ".." at the end of these strings
+        return "a."+name_for_servers, "b."+name_for_servers, "admin.a."+name_for_servers
 
     def serve_zone(self, name):
-        filename=name if name != "." else "root"
+        self.filename=name if name != "." else "root"
         j2_env = Environment(loader=FileSystemLoader(os.getcwd() + "/templates"))
         conf_file_content = j2_env.get_template("zone.conf").render(
             zone=name,
-            filename=filename
+            filename=self.filename
         )
         with open(self.conf_path+"/named.conf", "a") as f:
             f.write(conf_file_content)
 
-        name_for_servers = name if name != "." else "" # Just to avoid ".." at the end of these strings
+        prim, second, admin = DNSServer.__ns_names(name)
         zone_file_content = j2_env.get_template("template.zone").render(
-            primary_server="a."+name_for_servers,
-            secondary_server="b."+name_for_servers,
-            admin_email="admin.a."+name_for_servers,
-            zone=name
+            primary_server = prim,
+            secondary_server = second,
+            admin_email= admin,
+            zone=name,
+            ip_address=self.interface.get_address()
         )
-        with open(self.conf_path+"/"+filename+".zone", "w") as f:
+        with open(self.conf_path+"/"+self.filename+".zone", "w") as f:
+            f.write(zone_file_content)
+
+    def delegate_zone(self, zone, server_ip_address):
+        prim, second, admin = DNSServer.__ns_names(zone)
+        j2_env = Environment(loader=FileSystemLoader(os.getcwd() + "/templates"))
+        zone_file_content = j2_env.get_template("delegation.zone").render(
+            primary_server = prim,
+            secondary_server = second,
+            zone=zone,
+            ip_address=server_ip_address
+        )
+        with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
             f.write(zone_file_content)
 
     def sign_zone(self, tld):
