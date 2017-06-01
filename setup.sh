@@ -17,5 +17,7 @@ function installPackage {
 }
 
 installPackage fish nc tmux bind unbound
+runCommand "echo 'OPTIONS=\"-d 5\"' >> /etc/sysconfig/named" 'Set debug output for named'
+runCommand 'echo 1 > /proc/sys/net/ipv4/ip_forward' 'Enable ip forwarding'
 
 exit 0

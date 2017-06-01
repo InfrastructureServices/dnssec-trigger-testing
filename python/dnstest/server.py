@@ -10,9 +10,9 @@ import shutil
 
 RESOLVER_HINT = """
 
-zone "." IN {
+zone "." {
     type hint;
-    file "named.ca";
+    file "root.hint";
 };
 
 
@@ -38,7 +38,7 @@ class DNSServer:
         with open(self.conf_path+"/named.conf", "w") as f:
             f.write(conf_file_content)
         if srv_type == DNSServerType.RESOLVER:
-            shutil.copyfile(os.getcwd()+"/templates/named.ca", self.conf_path+"/named.ca")
+            shutil.copyfile(os.getcwd()+"/templates/root.hint", self.conf_path+"/root.hint")
             with open(self.conf_path+"/named.conf", "a") as f:
                 f.write(RESOLVER_HINT)
 

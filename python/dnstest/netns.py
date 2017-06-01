@@ -139,6 +139,10 @@ def get_ns_dev_addr(name):
         return None
 
 
+def set_default_route(ns, net_id):
+    _run_ip_ns_command(ns, ["route", "add", "default", "via", root_address(net_id),  "dev", _ns_link_name(ns)])
+
+
 class NetworkInterface:
     """
     Virtual network interface
@@ -149,6 +153,7 @@ class NetworkInterface:
         new_namespace(name)
         connect_to_root_ns(name)
         assign_addresses(name, net_id)
+        set_default_route(name, net_id)
 
     def get_address(self):
         return ns_address(self.net_id)
