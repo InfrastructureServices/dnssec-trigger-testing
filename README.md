@@ -16,6 +16,7 @@ Testing suite for the DNSSEC trigger project.
 ```bash
 $ vagrant up
 ```
+Note: Not true yet ^^^
 
 ## Resources:
 
