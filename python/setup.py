@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 try:
     from setuptools import setup
 except ImportError:
@@ -12,7 +14,7 @@ config = {
     'author_email': 'msehnout@redhat.com',
     'install_requires': ['nose'],
     'packages': ['dnstest'],
-    'scripts': ['bin/dnstest']
+    'scripts': ['bin/dnssec-testing-setup']
 }
 
 setup(**config)

@@ -16,8 +16,12 @@ function installPackage {
     done;
 }
 
-installPackage fish nc tmux bind unbound
-runCommand "echo 'OPTIONS=\"-d 5\"' >> /etc/sysconfig/named" 'Set debug output for named'
-runCommand 'echo 1 > /proc/sys/net/ipv4/ip_forward' 'Enable ip forwarding'
+installPackage fish nc tmux bind unbound bind-utils
+echo 'OPTIONS="-d 5"' >> /etc/sysconfig/named
+echo 1 > /proc/sys/net/ipv4/ip_forward'
+pushd /vagrant/python
+runCommand './setup.py install' 'Install python framework'
+popd 
+runCommand 'dnssec-testing-setup' 'Set up DNS servers and resolvers' 
 
 exit 0
