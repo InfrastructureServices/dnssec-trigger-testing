@@ -1,9 +1,8 @@
 # Spin up DNS servers (either authoritative or recursive)
-# TODO: implement
 
 from jinja2 import Environment, FileSystemLoader
 from enum import Enum
-from dir import Dir
+from dnstest.dir import Dir
 
 import os
 import shutil
@@ -29,7 +28,7 @@ class DNSServer:
         self.srv_type = srv_type
         self.interface = interface
         self.conf_path = Dir.new_dir("srv."+interface.get_address())
-        j2_env = Environment(loader=FileSystemLoader(os.getcwd() + "/templates"))
+        j2_env = Environment(loader=FileSystemLoader("templates"))
         conf_file_content = j2_env.get_template("named.conf").render(
             ip_address = interface.get_address(),
             working_dir=self.conf_path,

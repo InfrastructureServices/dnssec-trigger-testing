@@ -14,7 +14,8 @@ config = {
     'author_email': 'msehnout@redhat.com',
     'install_requires': ['nose'],
     'packages': ['dnstest'],
-    'scripts': ['bin/dnssec-testing-setup']
+    'scripts': ['bin/dnssec-testing-setup'],
+    'package_data' : {'': ['templates/*']},
 }
 
 setup(**config)

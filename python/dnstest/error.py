@@ -15,7 +15,7 @@ class ConfigError(Error):
         self.error = error
 
     def __str__(self):
-        base = "Configuration error in command: " + self.command + " with args: " + self.arguments
+        base = "Configuration error in command: " + str(self.command) + " with args: " + str(self.arguments)
         msg = base + ". Returned: " + self.error if self.error is not None else base
         return msg
 

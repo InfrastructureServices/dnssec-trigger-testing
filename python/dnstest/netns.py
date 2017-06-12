@@ -5,7 +5,7 @@
 import subprocess
 import re
 
-from error import ConfigError
+from dnstest.error import ConfigError
 
 
 def _run_ip_command(arguments):

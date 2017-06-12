@@ -1,7 +1,7 @@
-from server import DNSServer,DNSServerType
-from netns import NetworkInterface
-from dir import Dir
-from error import ConfigError
+from dnstest.server import DNSServer,DNSServerType
+from dnstest.netns import NetworkInterface
+from dnstest.dir import Dir
+from dnstest.error import ConfigError
 
 if __name__ == '__main__':
     try:
