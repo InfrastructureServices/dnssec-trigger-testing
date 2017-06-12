@@ -1,7 +1,8 @@
 # Spin up DNS servers (either authoritative or recursive)
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader, FileSystemLoader
 from enum import Enum
+from pkg_resources import resource_filename
 from dnstest.dir import Dir
 
 import os
@@ -28,7 +29,7 @@ class DNSServer:
         self.srv_type = srv_type
         self.interface = interface
         self.conf_path = Dir.new_dir("srv."+interface.get_address())
-        j2_env = Environment(loader=FileSystemLoader("templates"))
+        j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         conf_file_content = j2_env.get_template("named.conf").render(
             ip_address = interface.get_address(),
             working_dir=self.conf_path,
@@ -37,7 +38,7 @@ class DNSServer:
         with open(self.conf_path+"/named.conf", "w") as f:
             f.write(conf_file_content)
         if srv_type == DNSServerType.RESOLVER:
-            shutil.copyfile(os.getcwd()+"/templates/root.hint", self.conf_path+"/root.hint")
+            shutil.copyfile(resource_filename(__name__, 'templates/root.hint'), self.conf_path+"/root.hint")
             with open(self.conf_path+"/named.conf", "a") as f:
                 f.write(RESOLVER_HINT)
 
@@ -48,7 +49,7 @@ class DNSServer:
 
     def serve_zone(self, name):
         self.filename=name if name != "." else "root"
-        j2_env = Environment(loader=FileSystemLoader(os.getcwd() + "/templates"))
+        j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         conf_file_content = j2_env.get_template("zone.conf").render(
             zone=name,
             filename=self.filename
@@ -69,7 +70,7 @@ class DNSServer:
 
     def delegate_zone(self, zone, server_ip_address):
         prim, second, admin = DNSServer.__ns_names(zone)
-        j2_env = Environment(loader=FileSystemLoader(os.getcwd() + "/templates"))
+        j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         zone_file_content = j2_env.get_template("delegation.zone").render(
             primary_server = prim,
             secondary_server = second,

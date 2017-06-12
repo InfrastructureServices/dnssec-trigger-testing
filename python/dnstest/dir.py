@@ -8,7 +8,7 @@ class Dir:
 
     @classmethod
     def init(cls):
-        cls.base = os.getcwd() + "/run"
+        cls.base = '/tmp/run' # os.getcwd() + "/run"
         os.mkdir(cls.base)
 
     @classmethod

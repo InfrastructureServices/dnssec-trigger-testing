@@ -2,4 +2,4 @@
 
 pgrep named | xargs kill
 ip -all netns delete
-rm -rf run/
+rm -rf /tmp/run/
