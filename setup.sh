@@ -18,7 +18,7 @@ function installPackage {
 
 installPackage fish nc tmux bind unbound bind-utils
 echo 'OPTIONS="-d 5"' >> /etc/sysconfig/named
-echo 1 > /proc/sys/net/ipv4/ip_forward'
+echo 1 > /proc/sys/net/ipv4/ip_forward
 pushd /vagrant/python
 runCommand './setup.py install' 'Install python framework'
 popd 
