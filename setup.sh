@@ -16,12 +16,14 @@ function installPackage {
     done;
 }
 
-installPackage fish nc tmux bind unbound bind-utils
+installPackage fish nc tmux bind unbound bind-utils rng-tools
+runCommand 'rngd -r /dev/urandom' 'Entropy sources'
 echo 'OPTIONS="-d 5"' >> /etc/sysconfig/named
 echo 1 > /proc/sys/net/ipv4/ip_forward
 pushd /vagrant/python
 runCommand './setup.py install' 'Install python framework'
 popd 
 runCommand 'dnssec-testing-setup' 'Set up DNS servers and resolvers' 
+dnssec-testing-test-unsecure
 
 exit 0

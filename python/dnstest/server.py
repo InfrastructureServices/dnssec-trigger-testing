@@ -5,6 +5,7 @@ from enum import Enum
 from pkg_resources import resource_filename
 from dnstest.dir import Dir
 
+import subprocess
 import os
 import shutil
 
@@ -28,6 +29,8 @@ class DNSServer:
     def __init__(self, srv_type, interface):
         self.srv_type = srv_type
         self.interface = interface
+        self.filename = "foobar"
+        self.zone = "foobar"
         self.conf_path = Dir.new_dir("srv."+interface.get_address())
         j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         conf_file_content = j2_env.get_template("named.conf").render(
@@ -48,7 +51,8 @@ class DNSServer:
         return "a."+name_for_servers, "b."+name_for_servers, "admin.a."+name_for_servers
 
     def serve_zone(self, name):
-        self.filename=name if name != "." else "root"
+        self.zone = name
+        self.filename=name[:-1] if name != "." else "root"
         j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         conf_file_content = j2_env.get_template("zone.conf").render(
             zone=name,
@@ -80,8 +84,17 @@ class DNSServer:
         with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
             f.write(zone_file_content)
 
-    def sign_zone(self, tld):
-        pass
+    def sign_zone(self):#, tld):
+        """
+        Generate ZSK and KSK with dnssec-keygen
+        Sign with dnssec-signzone
+        """
+        subprocess.run(["dnssec-keygen", "-n", "ZONE", self.zone], cwd=self.conf_path)
+        subprocess.run(["dnssec-keygen", "-f", "KSK", "-n", "ZONE", self.zone], cwd=self.conf_path)
+        key_files = list(filter(lambda l: l.endswith("key"), os.listdir(self.conf_path)))
+        with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
+            for k in key_files:
+                f.write("$INCLUDE " + k + "\n")
 
     def run(self):
         self.interface.run_command(["named", "-u", "root", "-c", self.conf_path+"/named.conf"])

@@ -30,6 +30,9 @@ def main():
 
         com_server.delegate_zone("example.com.", ni_example.get_address())
 
+        # Start signing zones
+        example_com_server.sign_zone()
+
         # Resolver - no validation yet!
         ni_resolver = NetworkInterface("res", 99)
         resolver = DNSServer(DNSServerType.RESOLVER, ni_resolver)
