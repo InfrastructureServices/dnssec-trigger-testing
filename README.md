@@ -15,8 +15,9 @@ Testing suite for the DNSSEC trigger project.
 
 ```bash
 $ vagrant up
+$ vagrant ssh
+$ dnssec-testing-test-unsecure
 ```
-Note: Not true yet ^^^
 
 ## Resources:
 
