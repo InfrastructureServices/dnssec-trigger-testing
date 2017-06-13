@@ -5,7 +5,8 @@ from dnstest.netns import NetworkInterface
 from dnstest.dir import Dir
 from dnstest.error import ConfigError
 
-if __name__ == '__main__':
+
+def main():
     try:
         # Init directory tree
         Dir.init()
@@ -39,3 +40,7 @@ if __name__ == '__main__':
         resolver.run()
     except ConfigError as err:
         print("error: {0}".format(err))
+
+
+if __name__ == '__main__':
+    main()
