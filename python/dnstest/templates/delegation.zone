@@ -4,3 +4,5 @@
 {{zone}}      IN        NS              {{secondary_server}}
 {{primary_server}}      IN      A       {{ip_address}}
 {{secondary_server}}    IN      A       {{ip_address}}
+
+

@@ -30,6 +30,8 @@ class DNSServer:
         self.srv_type = srv_type
         self.interface = interface
         self.filename = "foobar"
+        self.zonefilename = "foobar"
+        self.dsfilename = "foobar"
         self.zone = "foobar"
         self.conf_path = Dir.new_dir("srv."+interface.get_address())
         j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
@@ -53,6 +55,8 @@ class DNSServer:
     def serve_zone(self, name):
         self.zone = name
         self.filename=name[:-1] if name != "." else "root"
+        self.zonefilename = self.filename+".zone"
+        self.dsfilename = "dsset-" + self.zone
         j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
         conf_file_content = j2_env.get_template("zone.conf").render(
             zone=name,
@@ -84,6 +88,17 @@ class DNSServer:
         with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
             f.write(zone_file_content)
 
+    def insert_ds_keys(self, zone):
+        """
+        Insert DS RR from delegated zone
+        :param zone: zone object
+        :type zone: DNSServer
+        :return:
+        """
+        with open(self.conf_path+"/"+self.filename+".zone", "a") as zonefile:
+            with open(zone.conf_path+"/"+zone.dsfilename, "r") as dsfile:
+                zonefile.write(dsfile.read())
+
     def sign_zone(self):#, tld):
         """
         Generate ZSK and KSK with dnssec-keygen
@@ -95,6 +110,7 @@ class DNSServer:
         with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
             for k in key_files:
                 f.write("$INCLUDE " + k + "\n")
+        subprocess.run(["dnssec-signzone", "-A", "-N", "INCREMENT", "-o", self.zone, "-t", self.filename+".zone"], cwd=self.conf_path)
 
     def run(self):
         self.interface.run_command(["named", "-u", "root", "-c", self.conf_path+"/named.conf"])

@@ -32,6 +32,10 @@ def main():
 
         # Start signing zones
         example_com_server.sign_zone()
+        com_server.insert_ds_keys(example_com_server)
+        com_server.sign_zone()
+        root_server.insert_ds_keys(com_server)
+        root_server.sign_zone()
 
         # Resolver - no validation yet!
         ni_resolver = NetworkInterface("res", 99)
