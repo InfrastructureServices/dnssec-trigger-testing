@@ -25,5 +25,6 @@ runCommand './setup.py install' 'Install python framework'
 popd 
 runCommand 'dnssec-testing-setup' 'Set up DNS servers and resolvers' 
 dnssec-testing-test-unsecure
+dig +dnssec @100.99.1.2 example.com
 
 exit 0

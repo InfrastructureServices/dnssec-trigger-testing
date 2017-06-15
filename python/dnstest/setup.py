@@ -40,6 +40,7 @@ def main():
         # Resolver - no validation yet!
         ni_resolver = NetworkInterface("res", 99)
         resolver = DNSServer(DNSServerType.RESOLVER, ni_resolver)
+        resolver.insert_trust_anchor(root_server)
 
         root_server.run()
         com_server.run()

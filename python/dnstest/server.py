@@ -32,6 +32,7 @@ class DNSServer:
         self.filename = "foobar"
         self.zonefilename = "foobar"
         self.dsfilename = "foobar"
+        self.ksk_file = "foobar"
         self.zone = "foobar"
         self.conf_path = Dir.new_dir("srv."+interface.get_address())
         j2_env = Environment(loader=PackageLoader(__name__, 'templates'))
@@ -104,13 +105,30 @@ class DNSServer:
         Generate ZSK and KSK with dnssec-keygen
         Sign with dnssec-signzone
         """
-        subprocess.run(["dnssec-keygen", "-n", "ZONE", self.zone], cwd=self.conf_path)
         subprocess.run(["dnssec-keygen", "-f", "KSK", "-n", "ZONE", self.zone], cwd=self.conf_path)
+        self.ksk_file = list(filter(lambda l: l.endswith("key"), os.listdir(self.conf_path)))[0]
+        subprocess.run(["dnssec-keygen", "-n", "ZONE", self.zone], cwd=self.conf_path)
         key_files = list(filter(lambda l: l.endswith("key"), os.listdir(self.conf_path)))
         with open(self.conf_path+"/"+self.filename+".zone", "a") as f:
             for k in key_files:
                 f.write("$INCLUDE " + k + "\n")
         subprocess.run(["dnssec-signzone", "-A", "-N", "INCREMENT", "-o", self.zone, "-t", self.filename+".zone"], cwd=self.conf_path)
+
+    def insert_trust_anchor(self, root_server):
+        """
+        Insert KSK of the root server
+        :param root_server:
+        :type root_server: DNSServer
+        :return:
+        """
+        if self.srv_type == DNSServerType.RESOLVER:
+            with open(root_server.conf_path+"/"+root_server.ksk_file, "r") as root_key_file:
+                root_key = root_key_file.readlines()[-1][20:-1]
+                with open(self.conf_path+"/named.conf", "a") as config:
+                    config.write("managed-keys {\n")
+                    config.write("\".\" initial-key 257 3 5 \"")
+                    config.write(root_key)
+                    config.write("\";\n};\n")
 
     def run(self):
         self.interface.run_command(["named", "-u", "root", "-c", self.conf_path+"/named.conf"])
