@@ -34,9 +34,14 @@ runCommand 'dnssec-testing-setup' 'Set up DNS servers and resolvers'
 dnssec-testing-test-unsecure
 dig +dnssec @100.99.1.2 example.com
 
+mkdir -p /dnssec/bin
+mkdir -p /dnssec/source
+# Install unbound control wrapper
+export PATH="/dnssec/bin:$PATH"
+install -m 755 /vagrant/unbound-control /dnssec/bin/
+
 # Clone dnssec-trigger repository and build from sources
-mkdir /dnssec
-pushd /dnssec
+pushd /dnssec/source
 runCommand 'git clone https://github.com/msehnout/dnssec-trigger-fedora.git .' 'Clone dnssec-trigger repository into local dir'
 runCommand 'dnf builddep dnssec-trigger.spec -y' 'Install dependencies'
 runCommand './configure --with-forward-zones-support --with-hooks=networkmanager' 'Configure'

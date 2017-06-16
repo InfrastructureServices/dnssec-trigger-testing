@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "$@" >> /dnssec/unbound-control.log
