@@ -11,6 +11,12 @@ Testing suite for the DNSSEC trigger project.
  * Replace unbound-control with simple script to capture output
  * Send input to a running instance of dnssec-trigger as JSON and watch the output
 
+## TODO list:
+
+ * Create a Python wrapper for dnssec-trigger
+ * Test very simple use case with only one working and broken resolver
+ * Pick up testing framework and use it instead of hand-written scripts
+
 ## How to test:
 
 ```bash
